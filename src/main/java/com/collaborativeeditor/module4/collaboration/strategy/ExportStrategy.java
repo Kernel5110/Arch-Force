@@ -14,9 +14,9 @@ public interface ExportStrategy {
      * Exports a document in a specific format.
      * 
      * @param document document to export
-     * @return exported content as string
+     * @return exported content as bytes
      */
-    String export(Document document);
+    byte[] export(Document document);
 
     /**
      * Gets the format name of this export strategy.

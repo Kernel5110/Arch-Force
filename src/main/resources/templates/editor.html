@@ -113,6 +113,21 @@
                     </button>
                 </div>
 
+                <hr style="margin: 20px 0;">
+
+                <h3><i class="fas fa-file-export"></i> Export</h3>
+                <div class="form-group">
+                    <select id="exportFormat">
+                        <option value="PDF">PDF Document</option>
+                        <option value="HTML">HTML File</option>
+                        <option value="Markdown">Markdown File</option>
+                    </select>
+                    <button class="btn" onclick="exportDocument()"
+                        style="width: 100%; margin-top: 5px; background-color: #007bff;">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+
                 <div id="versionList" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
                     <!-- Versions will be loaded here -->
                 </div>
@@ -386,19 +401,72 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    loadDocument(); // This might trigger update via polling anyway
-                    // Force reload of page to ensure clean state or just let polling handle it?
-                    // Let's force loadDocument explicitly.
+                    loadDocument();
                     alert('Version restored!');
-                    // We might need to reset lastVersion to ensure UI updates if the restored version is technically "older" or "newer"
-                    // Actually, restoring usually creates a new state or updates the document.
-                    // The backend saveDocument call updates lastModified, so version should increment, triggering polling.
                 } else {
                     alert('Restoration failed: ' + data.message);
                 }
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        async function exportDocument() {
+            const format = document.getElementById('exportFormat').value;
+            try {
+                const res = await fetch('/api/export/document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documentId: docId, format: format })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    const contentValues = data.data;
+                    const base64Content = contentValues.content;
+                    const encoding = contentValues.encoding;
+
+                    if (encoding === 'base64') {
+                        downloadBase64File(base64Content, `document.${format.toLowerCase()}`, getMimeType(format));
+                    } else {
+                        // Fallback for text
+                        downloadFile(base64Content, `document.${format.toLowerCase()}`, getMimeType(format));
+                    }
+                } else {
+                    alert('Export failed: ' + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Export failed');
+            }
+        }
+
+        function getMimeType(format) {
+            switch (format.toLowerCase()) {
+                case 'pdf': return 'application/pdf';
+                case 'html': return 'text/html';
+                case 'markdown': return 'text/markdown';
+                default: return 'application/octet-stream';
+            }
+        }
+
+        function downloadBase64File(base64Data, fileName, mimeType) {
+            const linkSource = `data:${mimeType};base64,${base64Data}`;
+            const downloadLink = document.createElement("a");
+            downloadLink.href = linkSource;
+            downloadLink.download = fileName;
+            downloadLink.click();
+        }
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         loadDocument();

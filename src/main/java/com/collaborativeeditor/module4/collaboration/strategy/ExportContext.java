@@ -51,7 +51,7 @@ public class ExportContext {
      * @param document document to export
      * @return exported content
      */
-    public String executeExport(Document document) {
+    public byte[] executeExport(Document document) {
         if (currentStrategy == null) {
             throw new IllegalStateException("Export strategy not set");
         }

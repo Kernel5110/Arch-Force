@@ -176,8 +176,11 @@ public class CreationController {
                         if (data.containsKey("altText"))
                                 image.setAltText((String) data.get("altText"));
                 } else if (element instanceof ListElement list) {
-                        if (data.containsKey("items"))
-                                list.setItems((java.util.List<String>) data.get("items"));
+                        if (data.containsKey("items")) {
+                                @SuppressWarnings("unchecked")
+                                List<String> items = (List<String>) data.get("items");
+                                list.setItems(items);
+                        }
                         if (data.containsKey("ordered"))
                                 list.setOrdered((Boolean) data.getOrDefault("ordered", false));
                 }
@@ -190,6 +193,7 @@ public class CreationController {
          * @param elementData element configuration data
          * @return created element
          */
+        @SuppressWarnings("unchecked")
         private Element createElementWithFactory(String elementType, Map<String, Object> elementData) {
                 return switch (elementType.toLowerCase()) {
                         case "paragraph" -> new ParagraphFactory()
@@ -201,15 +205,22 @@ public class CreationController {
                                         .withAltText((String) elementData.get("altText"))
                                         .createElement();
 
-                        case "table" -> new TableFactory()
-                                        .withHeaders((List<String>) elementData.get("headers"))
-                                        .withRows((List<List<String>>) elementData.get("rows"))
-                                        .createElement();
+                        case "table" -> {
+                                List<String> headers = (List<String>) elementData.get("headers");
+                                List<List<String>> rows = (List<List<String>>) elementData.get("rows");
+                                yield new TableFactory()
+                                                .withHeaders(headers)
+                                                .withRows(rows)
+                                                .createElement();
+                        }
 
-                        case "list" -> new ListFactory()
-                                        .withItems((List<String>) elementData.get("items"))
-                                        .ordered((Boolean) elementData.getOrDefault("ordered", false))
-                                        .createElement();
+                        case "list" -> {
+                                List<String> items = (List<String>) elementData.get("items");
+                                yield new ListFactory()
+                                                .withItems(items)
+                                                .ordered((Boolean) elementData.getOrDefault("ordered", false))
+                                                .createElement();
+                        }
 
                         case "heading" -> new HeadingFactory()
                                         .withContent((String) elementData.get("content"))

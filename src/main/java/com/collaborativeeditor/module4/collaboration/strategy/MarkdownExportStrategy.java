@@ -14,36 +14,27 @@ import org.springframework.stereotype.Component;
 public class MarkdownExportStrategy implements ExportStrategy {
 
     @Override
-    public String export(Document document) {
+    public byte[] export(Document document) {
         StringBuilder markdown = new StringBuilder();
 
         // Title
         markdown.append("# ").append(document.getTitle()).append("\n\n");
 
-        // Author
-        markdown.append("**Author:** ").append(document.getAuthor()).append("\n\n");
-
-        // Metadata
         if (document.getMetadata() != null && !document.getMetadata().isEmpty()) {
-            markdown.append("**Metadata:** ").append(document.getMetadata()).append("\n\n");
+            markdown.append("> Metadata: ").append(document.getMetadata()).append("\n\n");
         }
 
-        // Elements
         for (Element element : document.getElements()) {
-            markdown.append(convertElementToMarkdown(element)).append("\n\n");
+            markdown.append(renderElement(element)).append("\n\n");
         }
 
-        return markdown.toString();
+        return markdown.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    private String convertElementToMarkdown(Element element) {
-        return switch (element.getType()) {
-            case "paragraph" -> element.getContent();
-            case "image" -> "![Image](" + element.getContent() + ")";
-            case "table" -> "| Table | (table content omitted in markdown) |";
-            case "list" -> "- " + element.getContent();
-            default -> element.getContent();
-        };
+    private String renderElement(Element element) {
+        // Simple rendering based on type
+        // In a real app we would use polymorphic rendering
+        return element.render();
     }
 
     @Override

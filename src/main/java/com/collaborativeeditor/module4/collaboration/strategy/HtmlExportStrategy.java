@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 public class HtmlExportStrategy implements ExportStrategy {
 
     @Override
-    public String export(Document document) {
-        return document.renderAsHtml();
+    public byte[] export(Document document) {
+        return document.renderAsHtml().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @Override
