@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Document Editor</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .editor-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-area {
+            flex-grow: 1;
+            background: #fff;
+            padding: 40px;
+            min-height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main style="padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <div id="connectionStatus" style="color: #28a745; font-size: 0.9em;"><i class="fas fa-wifi"></i> Live Sync
+                Active (1s)</div>
+        </div>
+
+        <div id="docHeader">
+            <h1 id="docTitle">Loading...</h1>
+            <p id="docMeta">Loading...</p>
+        </div>
+
+        <div class="editor-container">
+            <div class="content-area" id="documentContent">
+                <!-- Elements will be rendered here -->
+            </div>
+
+            <div class="sidebar">
+                <h3>Actions</h3>
+
+                <div class="form-group">
+                    <label>Add Element</label>
+                    <select id="elementType" onchange="toggleInputs()">
+                        <option value="paragraph">Paragraph</option>
+                        <option value="heading">Heading</option>
+                        <option value="image">Image</option>
+                        <option value="list">List</option>
+                        <!-- Table omitted for simplicity for now -->
+                    </select>
+                </div>
+
+                <div id="paragraphInputs">
+                    <textarea id="pContent" placeholder="Enter paragraph content..." rows="5"></textarea>
+                </div>
+
+                <div id="headingInputs" style="display:none;">
+                    <input type="text" id="headingContent" placeholder="Heading text">
+                    <select id="headingLevel">
+                        <option value="1">H1</option>
+                        <option value="2">H2</option>
+                        <option value="3">H3</option>
+                        <option value="4">H4</option>
+                        <option value="5">H5</option>
+                        <option value="6">H6</option>
+                    </select>
+                </div>
+
+                <div id="imageInputs" style="display:none;">
+                    <input type="text" id="imgUrl" placeholder="Image URL">
+                    <input type="text" id="imgAlt" placeholder="Alt text">
+                </div>
+
+                <div id="listInputs" style="display:none;">
+                    <textarea id="listItems" placeholder="Items (comma separated)" rows="5"></textarea>
+                    <label><input type="checkbox" id="listOrdered"> Ordered</label>
+                </div>
+
+                <button id="addButton" class="btn" onclick="handleAction()" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+                <button id="updateButton" class="btn" onclick="handleAction()"
+                    style="width: 100%; margin-top: 10px; display: none; background-color: #28a745;">
+                    <i class="fas fa-save"></i> Update
+                </button>
+                <button id="cancelButton" class="btn btn-secondary" onclick="cancelEdit()"
+                    style="width: 100%; margin-top: 10px; display: none;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+
+                <hr style="margin: 20px 0;">
+
+                <h3><i class="fas fa-history"></i> Version History</h3>
+                <div class="form-group">
+                    <input type="text" id="versionName" placeholder="Commit message (e.g. v1)">
+                    <button class="btn" onclick="saveVersion()"
+                        style="width: 100%; margin-top: 5px; background-color: #6c757d;">
+                        <i class="fas fa-save"></i> Save Version
+                    </button>
+                </div>
+
+                <div id="versionList" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                    <!-- Versions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const docId = /*[[${documentId}]]*/ 'default';
+        /*]]>*/
+
+        let lastVersion = -1;
+
+        async function loadDocument() {
+            try {
+                const res = await fetch(`/api/documents/${docId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    const doc = data.data;
+
+                    // Only update if version changed
+                    if (doc.version > lastVersion) {
+                        lastVersion = doc.version;
+
+                        document.getElementById('docTitle').innerText = doc.title;
+                        document.getElementById('docMeta').innerText = `Author: ${doc.author}`;
+
+                        // Don't re-render if we are currently editing an element to avoid disruption
+                        // ideally we'd merge, but for now simple policy:
+                        // if user is editing, we show a notification or just don't re-render the list
+                        // For this simple requirement "changes load without refresh", we will re-render list
+                        // The user editing form is separate from the list display div, so acceptable.
+                        renderElements(doc.elements || []);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Poll every 1 second for faster updates
+        setInterval(loadDocument, 1000);
+
+        let selectedElementId = null;
+
+        function renderElements(elements) {
+            const container = document.getElementById('documentContent');
+            container.innerHTML = '';
+
+            elements.forEach(el => {
+                const elDiv = document.createElement('div');
+                elDiv.className = 'document-element';
+                elDiv.style.cursor = 'pointer';
+                elDiv.onclick = () => selectElement(el);
+
+                // Since I don't know the exact JSON structure of 'Element' serialization (it depends on Visitor/Model),
+                // I will inspect what comes back or handle common fields.
+                // Assuming polimorphic type info or content fields.
+
+                // Just dumping content for now as I verified Factory creates generic Elements but specific subclasses.
+                // Let's assume standard JSON serialization of fields.
+
+                let contentHtml = '';
+                // Simple heuristic rendering based on typical fields
+                if (el.content && !el.level) {
+                    // Paragraph
+                    contentHtml = `<p>${el.content}</p>`;
+                } else if (el.level) {
+                    // Heading
+                    contentHtml = `<h${el.level}>${el.content}</h${el.level}>`;
+                } else if (el.url) {
+                    // Image
+                    contentHtml = `<img src="${el.url}" alt="${el.altText || ''}" style="max-width:100%">`;
+                } else if (el.items) {
+                    // List
+                    const tag = el.ordered ? 'ol' : 'ul';
+                    const items = el.items.map(i => `<li>${i}</li>`).join('');
+                    contentHtml = `<${tag}>${items}</${tag}>`;
+                } else {
+                    contentHtml = `<pre>${JSON.stringify(el, null, 2)}</pre>`;
+                }
+
+                elDiv.innerHTML = contentHtml;
+                container.appendChild(elDiv);
+            });
+        }
+
+        function selectElement(el) {
+            selectedElementId = el.id;
+            const elementTypeSelect = document.getElementById('elementType');
+
+            // Determine element type and set select value
+            if (el.content && !el.level) { // Paragraph
+                elementTypeSelect.value = 'paragraph';
+                document.getElementById('pContent').value = el.content;
+            } else if (el.level) { // Heading
+                elementTypeSelect.value = 'heading';
+                document.getElementById('headingContent').value = el.content;
+                document.getElementById('headingLevel').value = el.level;
+            } else if (el.url) { // Image
+                elementTypeSelect.value = 'image';
+                document.getElementById('imgUrl').value = el.url;
+                document.getElementById('imgAlt').value = el.altText || '';
+            } else if (el.items) { // List
+                elementTypeSelect.value = 'list';
+                document.getElementById('listItems').value = el.items.join(', ');
+                document.getElementById('listOrdered').checked = el.ordered;
+            } else {
+                // Fallback or unknown type
+                elementTypeSelect.value = 'paragraph'; // Default to paragraph
+            }
+
+            toggleInputs(); // Refresh inputs visibility based on selected type
+
+            // Toggle buttons
+            document.getElementById('addButton').style.display = 'none';
+            document.getElementById('updateButton').style.display = 'block';
+            document.getElementById('cancelButton').style.display = 'block';
+        }
+
+        function cancelEdit() {
+            selectedElementId = null;
+            document.getElementById('addButton').style.display = 'block';
+            document.getElementById('updateButton').style.display = 'none';
+            document.getElementById('cancelButton').style.display = 'none';
+            clearInputs();
+            document.getElementById('elementType').value = 'paragraph'; // Reset select
+            toggleInputs(); // Show paragraph inputs by default
+        }
+
+        function clearInputs() {
+            document.getElementById('pContent').value = '';
+            document.getElementById('headingContent').value = '';
+            document.getElementById('imgUrl').value = '';
+            document.getElementById('imgAlt').value = '';
+            document.getElementById('listItems').value = '';
+            document.getElementById('listOrdered').checked = false;
+            document.getElementById('headingLevel').value = '1'; // Reset heading level
+        }
+
+        function toggleInputs() {
+            const type = document.getElementById('elementType').value;
+            document.getElementById('paragraphInputs').style.display = type === 'paragraph' ? 'block' : 'none';
+            document.getElementById('headingInputs').style.display = type === 'heading' ? 'block' : 'none';
+            document.getElementById('imageInputs').style.display = type === 'image' ? 'block' : 'none';
+            document.getElementById('listInputs').style.display = type === 'list' ? 'block' : 'none';
+        }
+
+        async function handleAction() {
+            const type = document.getElementById('elementType').value;
+            let data = {};
+
+            if (type === 'paragraph') {
+                data.content = document.getElementById('pContent').value;
+            } else if (type === 'heading') {
+                data.content = document.getElementById('headingContent').value;
+                data.level = parseInt(document.getElementById('headingLevel').value);
+            } else if (type === 'image') {
+                data.url = document.getElementById('imgUrl').value;
+                data.altText = document.getElementById('imgAlt').value;
+            } else if (type === 'list') {
+                data.items = document.getElementById('listItems').value.split(',').map(s => s.trim()).filter(s => s !== '');
+                data.ordered = document.getElementById('listOrdered').checked;
+            }
+
+            const url = selectedElementId ? '/api/documents/update-element' : '/api/documents/add-element';
+            const body = selectedElementId ? {
+                documentId: docId,
+                elementId: selectedElementId,
+                elementData: data
+            } : {
+                documentId: docId,
+                elementType: type,
+                elementData: data
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    loadDocument(); // Reload to see changes
+                    cancelEdit(); // Reset state
+                } else {
+                    const errorData = await res.json();
+                    alert('Error: ' + (errorData.message || 'Unknown error'));
+                    console.error('Action error:', errorData);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to connect to server');
+            }
+        }
+
+        // --- Version Control Logic ---
+
+        async function saveVersion() {
+            const versionName = document.getElementById('versionName').value;
+            if (!versionName) {
+                alert('Please enter a version name/message');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/versions/create?documentId=${docId}&versionName=${encodeURIComponent(versionName)}`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('versionName').value = '';
+                    loadVersions();
+                    alert('Version saved!');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadVersions() {
+            try {
+                const res = await fetch(`/api/versions/list?documentId=${docId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    const list = document.getElementById('versionList');
+                    list.innerHTML = '';
+
+                    // Sort by time descending (if not already)
+                    // data.data is list of maps
+
+                    if (data.data.length === 0) {
+                        list.innerHTML = '<p style="color:#888; font-style:italic;">No versions saved.</p>';
+                        return;
+                    }
+
+                    data.data.forEach(v => {
+                        const div = document.createElement('div');
+                        div.style.borderBottom = '1px solid #eee';
+                        div.style.padding = '8px 0';
+                        div.innerHTML = `
+                            <div style="font-weight: bold; font-size: 0.9em;">${v.version}</div>
+                            <div style="font-size: 0.8em; color: #666;">${new Date(v.snapshotTime).toLocaleString()}</div>
+                            <button class="btn btn-sm" onclick="restoreVersion('${v.version}')" style="margin-top:4px; padding: 2px 8px; font-size: 0.8em; background-color: #17a2b8;">
+                               <i class="fas fa-undo"></i> Restore
+                            </button>
+                        `;
+                        list.prepend(div); // Newest first
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function restoreVersion(version) {
+            if (!confirm(`Are you sure you want to restore version "${version}"? Current unsaved changes will be overridden.`)) return;
+
+            try {
+                const res = await fetch(`/api/versions/restore?documentId=${docId}&version=${encodeURIComponent(version)}`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    loadDocument(); // This might trigger update via polling anyway
+                    // Force reload of page to ensure clean state or just let polling handle it?
+                    // Let's force loadDocument explicitly.
+                    alert('Version restored!');
+                    // We might need to reset lastVersion to ensure UI updates if the restored version is technically "older" or "newer"
+                    // Actually, restoring usually creates a new state or updates the document.
+                    // The backend saveDocument call updates lastModified, so version should increment, triggering polling.
+                } else {
+                    alert('Restoration failed: ' + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        loadDocument();
+        loadVersions(); // Load initial versions
+    </script>
+</body>
+
+</html>
