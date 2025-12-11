@@ -1,57 +1,77 @@
 package com.collaborativeeditor.module3.versioning.memento;
 
+import com.collaborativeeditor.module1.creation.model.Element;
+import com.collaborativeeditor.repository.DocumentVersionRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Caretaker in the Memento pattern.
- * Manages the history of document mementos.
+ * Manages the history of document mementos using persistent storage.
  * 
  * @author Arch_Force Team
  */
 @Component
+@RequiredArgsConstructor
 public class MementoCaretaker {
 
-    // Map of documentId -> list of mementos
-    private final Map<String, List<DocumentMemento>> mementoHistory = new HashMap<>();
+    private final DocumentVersionRepository versionRepository;
+    private final ObjectMapper objectMapper;
 
     /**
-     * Saves a memento for a document.
+     * Saves a memento for a document to the database.
      * 
      * @param documentId document ID
      * @param memento    memento to save
      */
     public void saveMemento(String documentId, DocumentMemento memento) {
-        mementoHistory.computeIfAbsent(documentId, k -> new ArrayList<>()).add(memento);
+        try {
+            String elementsJson = objectMapper.writeValueAsString(memento.getElements());
+
+            DocumentVersion versionEntity = new DocumentVersion(
+                    documentId,
+                    memento.getVersion(),
+                    memento.getTitle(),
+                    memento.getAuthor(),
+                    memento.getMetadata(),
+                    elementsJson,
+                    memento.getSnapshotTime());
+
+            versionRepository.save(versionEntity);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize document state", e);
+        }
     }
 
     /**
-     * Gets a specific version memento for a document.
+     * Gets a specific version memento for a document from the database.
      * 
      * @param documentId document ID
      * @param version    version to retrieve
      * @return memento or null if not found
      */
     public DocumentMemento getMemento(String documentId, String version) {
-        List<DocumentMemento> mementos = mementoHistory.get(documentId);
-        if (mementos == null) {
-            return null;
-        }
-
-        return mementos.stream()
-                .filter(m -> m.getVersion().equals(version))
-                .findFirst()
+        return versionRepository.findByDocumentIdAndVersion(documentId, version)
+                .map(this::convertToMemento)
                 .orElse(null);
     }
 
     /**
-     * Gets all mementos for a document.
+     * Gets all mementos for a document from the database.
      * 
      * @param documentId document ID
      * @return list of mementos
      */
     public List<DocumentMemento> getAllMementos(String documentId) {
-        return new ArrayList<>(mementoHistory.getOrDefault(documentId, List.of()));
+        return versionRepository.findByDocumentIdOrderBySnapshotTimeDesc(documentId)
+                .stream()
+                .map(this::convertToMemento)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -61,11 +81,11 @@ public class MementoCaretaker {
      * @return latest memento or null if none exist
      */
     public DocumentMemento getLatestMemento(String documentId) {
-        List<DocumentMemento> mementos = mementoHistory.get(documentId);
-        if (mementos == null || mementos.isEmpty()) {
+        List<DocumentVersion> versions = versionRepository.findByDocumentIdOrderBySnapshotTimeDesc(documentId);
+        if (versions.isEmpty()) {
             return null;
         }
-        return mementos.get(mementos.size() - 1);
+        return convertToMemento(versions.get(0));
     }
 
     /**
@@ -74,6 +94,28 @@ public class MementoCaretaker {
      * @param documentId document ID
      */
     public void clearHistory(String documentId) {
-        mementoHistory.remove(documentId);
+        List<DocumentVersion> versions = versionRepository.findByDocumentIdOrderBySnapshotTimeDesc(documentId);
+        versionRepository.deleteAll(versions);
+    }
+
+    private DocumentMemento convertToMemento(DocumentVersion entity) {
+        try {
+            List<Element> elements = objectMapper.readValue(
+                    entity.getElementsJson(),
+                    new TypeReference<List<Element>>() {
+                    });
+
+            // Reconstruct the Memento
+            // Note: We use the constructor. Memento fields are final.
+            return new DocumentMemento(
+                    entity.getDocumentId(), // reusing memento ID as document ID for now as per original code
+                    entity.getTitle(),
+                    entity.getAuthor(),
+                    elements,
+                    entity.getMetadata(),
+                    entity.getVersion());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize document state for version " + entity.getVersion(), e);
+        }
     }
 }
