@@ -18,7 +18,7 @@ import lombok.Setter;
 @Setter
 public abstract class StyleDecorator extends Element {
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "wrapped_element_id")
     protected Element wrappedElement;
 

@@ -38,7 +38,7 @@ public class Document {
     @Column(columnDefinition = "TEXT")
     private String metadata;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id")
     @Builder.Default
     private List<Element> elements = new ArrayList<>();
@@ -62,22 +62,6 @@ public class Document {
         this.lastModified = LocalDateTime.now();
     }
 
-    /**
-     * Renders the entire document as HTML.
-     * 
-     * @return HTML representation
-     */
-    public String renderAsHtml() {
-        StringBuilder html = new StringBuilder();
-        html.append("<html><body>");
-        html.append("<h1>").append(title).append("</h1>");
-        html.append("<p><em>By ").append(author).append("</em></p>");
-
-        for (Element element : elements) {
-            html.append(element.render());
-        }
-
-        html.append("</body></html>");
-        return html.toString();
-    }
+    // View logic (renderAsHtml) has been removed to separate concerns.
+    // Use a DocumentRenderer service or DTO mapper instead.
 }

@@ -4,7 +4,7 @@ import com.collaborativeeditor.dto.AddElementRequest;
 import com.collaborativeeditor.dto.ApiResponse;
 import com.collaborativeeditor.dto.CreateDocumentRequest;
 import com.collaborativeeditor.module1.creation.builder.DocumentBuilder;
-import com.collaborativeeditor.module1.creation.factory.*;
+
 import com.collaborativeeditor.module1.creation.model.*;
 import com.collaborativeeditor.service.DocumentService;
 import jakarta.validation.Valid;
@@ -73,14 +73,12 @@ public class CreationController {
                                         .body(ApiResponse.error("Document not found"));
                 }
 
-                Element element = createElementWithFactory(
-                                request.getElementType(),
-                                request.getElementData());
+                Element element = request.getElement();
 
                 if (element == null) {
                         return ResponseEntity
                                         .status(HttpStatus.BAD_REQUEST)
-                                        .body(ApiResponse.error("Invalid element type"));
+                                        .body(ApiResponse.error("Invalid element data"));
                 }
 
                 document.addElement(element);
@@ -193,43 +191,5 @@ public class CreationController {
          * @param elementData element configuration data
          * @return created element
          */
-        @SuppressWarnings("unchecked")
-        private Element createElementWithFactory(String elementType, Map<String, Object> elementData) {
-                return switch (elementType.toLowerCase()) {
-                        case "paragraph" -> new ParagraphFactory()
-                                        .withContent((String) elementData.get("content"))
-                                        .createElement();
 
-                        case "image" -> new ImageFactory()
-                                        .withUrl((String) elementData.get("url"))
-                                        .withAltText((String) elementData.get("altText"))
-                                        .createElement();
-
-                        case "table" -> {
-                                List<String> headers = (List<String>) elementData.get("headers");
-                                List<List<String>> rows = (List<List<String>>) elementData.get("rows");
-                                yield new TableFactory()
-                                                .withHeaders(headers)
-                                                .withRows(rows)
-                                                .createElement();
-                        }
-
-                        case "list" -> {
-                                List<String> items = (List<String>) elementData.get("items");
-                                yield new ListFactory()
-                                                .withItems(items)
-                                                .ordered((Boolean) elementData.getOrDefault("ordered", false))
-                                                .createElement();
-                        }
-
-                        case "heading" -> new HeadingFactory()
-                                        .withContent((String) elementData.get("content"))
-                                        .withLevel(elementData.get("level") instanceof Integer
-                                                        ? (Integer) elementData.get("level")
-                                                        : Integer.parseInt(elementData.get("level").toString()))
-                                        .createElement();
-
-                        default -> null;
-                };
-        }
 }

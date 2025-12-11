@@ -80,15 +80,16 @@ public class DocumentSubject {
     public void notifyObservers(String documentId, String message) {
         List<PersistentCollaborator> collaborators = collaboratorRepository.findByDocumentId(documentId);
 
+        // Batch update in memory
+        String timestamp = java.time.LocalDateTime.now().toString();
         for (PersistentCollaborator entity : collaborators) {
-            // Update entity state (notifications history)
             entity.addNotification(
-                    String.format("Document %s: %s (at %s)", documentId, message, java.time.LocalDateTime.now()));
-            collaboratorRepository.save(entity); // Persist the notification
+                    String.format("Document %s: %s (at %s)", documentId, message, timestamp));
+        }
 
-            // In a real real-time app, here we would push via WebSocket.
-            // But persisting the "Notification" log is what 'Collaborator.update()' did
-            // previously in memory.
+        // Single batch write
+        if (!collaborators.isEmpty()) {
+            collaboratorRepository.saveAll(collaborators);
         }
     }
 
