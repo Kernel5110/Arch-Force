@@ -8,8 +8,6 @@ import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
-
 /**
  * Concrete strategy for exporting documents as PDF using OpenPDF.
  * Part of the Strategy pattern.
@@ -20,8 +18,8 @@ import java.io.ByteArrayOutputStream;
 public class PdfExportStrategy implements ExportStrategy {
 
     @Override
-    public byte[] export(Document document) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+    public void export(Document document, java.io.OutputStream out) {
+        try {
             com.lowagie.text.Document pdfDoc = new com.lowagie.text.Document();
             PdfWriter.getInstance(pdfDoc, out);
 
@@ -52,7 +50,6 @@ public class PdfExportStrategy implements ExportStrategy {
             }
 
             pdfDoc.close();
-            return out.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Error generating PDF", e);
         }

@@ -8,50 +8,66 @@
 </head>
 
 <body>
-    <!-- Replace header -->
     <div th:replace="~{fragments/header :: header}"></div>
 
     <main class="container">
-        <h1><i class="fas fa-file-alt"></i> Collaborative Document Editor</h1>
-
-        <div class="form-group">
-            <h3>Create New Document</h3>
-            <form id="createForm" onsubmit="createDocument(event)">
-                <input type="text" id="title" placeholder="Document Title" required>
-                <input type="text" id="author" placeholder="Author Name" required>
-                <button type="submit" class="btn"><i class="fas fa-plus"></i> Create</button>
-            </form>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1><i class="fas fa-folder-open"></i> My Documents</h1>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; border: 1px solid #eee;">
+                <h3 style="margin-top: 0; font-size: 1rem;"><i class="fas fa-plus-circle"></i> New Document</h3>
+                <form id="createForm" onsubmit="createDocument(event)" style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="title" placeholder="Title" required style="width: 200px;">
+                    <input type="text" id="author" placeholder="Author" required style="width: 150px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-magic"></i> Create</button>
+                </form>
+            </div>
         </div>
 
-        <h3>Existing Documents</h3>
-        <table id="docTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="doc : ${documents}">
-                    <td th:text="${doc.id}">ID</td>
-                    <td th:text="${doc.title}">Title</td>
-                    <td th:text="${doc.author}">Author</td>
-                    <td>
-                        <a th:href="@{'/editor/' + ${doc.id}}" class="btn btn-secondary">
-                            <i class="fas fa-edit"></i> Open
-                        </a>
-                    </td>
-                </tr>
-                <tr th:if="${documents.empty}">
-                    <td colspan="4" style="text-align:center">No documents found. Create one!</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">Title</th>
+                        <th>Author</th>
+                        <th>Last Modified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="doc : ${documents}">
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-file-alt" style="color: #4a90e2; font-size: 1.2rem;"></i>
+                                <span th:text="${doc.title}" style="font-weight: 500;">Title</span>
+                                <span
+                                    style="font-size: 0.7rem; color: #999; border: 1px solid #eee; padding: 2px 5px; border-radius: 4px;"
+                                    th:text="${doc.id}">ID</span>
+                            </div>
+                        </td>
+                        <td th:text="${doc.author}">Author</td>
+                        <td th:text="${#temporals.format(doc.lastModified, 'dd-MM-yyyy HH:mm')}">Date</td>
+                        <td style="display: flex; gap: 0.5rem;">
+                            <a th:href="@{'/editor/' + ${doc.id}}" class="btn btn-secondary" style="font-size: 0.8rem;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button class="btn btn-danger" th:data-id="${doc.id}"
+                                onclick="deleteDocument(this.getAttribute('data-id'))" style="font-size: 0.8rem;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${documents.empty}">
+                        <td colspan="4" style="text-align:center; padding: 3rem; color: #999;">
+                            <i class="fas fa-wind"
+                                style="font-size: 3rem; display: block; margin-bottom: 1rem; color: #ddd;"></i>
+                            No documents yet. Start writing something amazing!
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </main>
 
-    <!-- Replace footer -->
     <div th:replace="~{fragments/footer :: footer}"></div>
 
     <script>
@@ -75,6 +91,26 @@
             } catch (error) {
                 console.error(error);
                 alert('Error creating document');
+            }
+        }
+
+        async function deleteDocument(id) {
+            // Updated to be a generic delete (soft delete in backend)
+            if (confirm('Move this document to Recycle Bin?')) {
+                try {
+                    const response = await fetch(`/api/documents/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Error deleting document');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Error deleting document');
+                }
             }
         }
     </script>

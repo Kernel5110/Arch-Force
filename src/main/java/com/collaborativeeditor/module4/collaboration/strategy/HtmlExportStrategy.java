@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class HtmlExportStrategy implements ExportStrategy {
 
     @Override
-    public byte[] export(Document document) {
+    public void export(Document document, java.io.OutputStream out) {
         StringBuilder html = new StringBuilder();
         html.append("<html><body>");
         html.append("<h1>").append(document.getTitle()).append("</h1>");
@@ -24,7 +24,11 @@ public class HtmlExportStrategy implements ExportStrategy {
         }
 
         html.append("</body></html>");
-        return html.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            out.write(html.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error writing HTML to output stream", e);
+        }
     }
 
     @Override

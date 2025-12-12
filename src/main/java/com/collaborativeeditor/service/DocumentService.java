@@ -42,17 +42,63 @@ public class DocumentService {
      * 
      * @return list of all documents
      */
+    /**
+     * Gets all active documents (not in recycle bin).
+     * 
+     * @return list of active documents
+     */
     public List<Document> getAllDocuments() {
-        return documentRepository.findAll();
+        return documentRepository.findByDeletedFalse();
     }
 
     /**
-     * Deletes a document.
+     * Gets all documents in the recycle bin.
+     * 
+     * @return list of deleted documents
+     */
+    public List<Document> getRecycleBinDocuments() {
+        return documentRepository.findByDeletedTrue();
+    }
+
+    /**
+     * Soft deletes a document (moves to recycle bin).
      * 
      * @param id document ID
      * @return true if deleted, false if not found
      */
     public boolean deleteDocument(String id) {
+        Document doc = documentRepository.findById(id).orElse(null);
+        if (doc != null) {
+            doc.setDeleted(true);
+            documentRepository.save(doc);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Restores a document from the recycle bin.
+     * 
+     * @param id document ID
+     * @return true if restored, false if not found
+     */
+    public boolean restoreDocument(String id) {
+        Document doc = documentRepository.findById(id).orElse(null);
+        if (doc != null) {
+            doc.setDeleted(false);
+            documentRepository.save(doc);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Permanently deletes a document.
+     * 
+     * @param id document ID
+     * @return true if deleted, false if not found
+     */
+    public boolean permanentDeleteDocument(String id) {
         if (documentRepository.existsById(id)) {
             documentRepository.deleteById(id);
             return true;

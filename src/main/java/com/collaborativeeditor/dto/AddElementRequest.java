@@ -20,5 +20,7 @@ public class AddElementRequest {
     @NotBlank(message = "Document ID is required")
     private String documentId;
 
-    private com.collaborativeeditor.module1.creation.model.Element element;
+    private String elementType;
+
+    private java.util.Map<String, Object> elementData;
 }

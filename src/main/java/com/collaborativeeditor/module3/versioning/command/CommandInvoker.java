@@ -1,7 +1,6 @@
 package com.collaborativeeditor.module3.versioning.command;
 
 import org.springframework.stereotype.Component;
-import java.util.Stack;
 
 /**
  * Invoker in the Command pattern.
@@ -16,6 +15,8 @@ public class CommandInvoker {
     private final java.util.Map<String, java.util.Deque<Command>> undoStacks = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, java.util.Deque<Command>> redoStacks = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private static final int MAX_HISTORY_SIZE = 50;
+
     /**
      * Executes a command and adds it to the undo stack for the specific document.
      * 
@@ -24,9 +25,25 @@ public class CommandInvoker {
      */
     public void executeCommand(String documentId, Command command) {
         command.execute();
-        undoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>()).push(command);
-        // Clear redo stack when new command is executed
-        redoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>()).clear();
+        java.util.Deque<Command> undoStack = undoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>());
+
+        synchronized (undoStack) {
+            undoStack.push(command);
+
+            // Prevent memory leaks by limiting history size
+            if (undoStack.size() > MAX_HISTORY_SIZE) {
+                undoStack.removeLast();
+            }
+        }
+
+        // Clear redo stack when new command is executed.
+        // We must use computeIfAbsent to ensure we lock the authoritative stack
+        // instance
+        // to prevent race conditions with concurrent undo/redo operations.
+        java.util.Deque<Command> redoStack = redoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>());
+        synchronized (redoStack) {
+            redoStack.clear();
+        }
     }
 
     /**
@@ -37,13 +54,25 @@ public class CommandInvoker {
      */
     public boolean undo(String documentId) {
         java.util.Deque<Command> undoStack = undoStacks.get(documentId);
-        if (undoStack == null || undoStack.isEmpty()) {
+        if (undoStack == null) {
             return false;
         }
 
-        Command command = undoStack.pop();
+        Command command;
+        synchronized (undoStack) {
+            if (undoStack.isEmpty()) {
+                return false;
+            }
+            command = undoStack.pop();
+        }
+
+        // Execute undo outside the lock to prevent deadlocks
         command.undo();
-        redoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>()).push(command);
+
+        java.util.Deque<Command> redoStack = redoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>());
+        synchronized (redoStack) {
+            redoStack.push(command);
+        }
         return true;
     }
 
@@ -55,13 +84,25 @@ public class CommandInvoker {
      */
     public boolean redo(String documentId) {
         java.util.Deque<Command> redoStack = redoStacks.get(documentId);
-        if (redoStack == null || redoStack.isEmpty()) {
+        if (redoStack == null) {
             return false;
         }
 
-        Command command = redoStack.pop();
+        Command command;
+        synchronized (redoStack) {
+            if (redoStack.isEmpty()) {
+                return false;
+            }
+            command = redoStack.pop();
+        }
+
+        // Execute redo outside the lock
         command.execute();
-        undoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>()).push(command);
+
+        java.util.Deque<Command> undoStack = undoStacks.computeIfAbsent(documentId, k -> new java.util.ArrayDeque<>());
+        synchronized (undoStack) {
+            undoStack.push(command);
+        }
         return true;
     }
 
@@ -73,7 +114,12 @@ public class CommandInvoker {
      */
     public String getUndoDescription(String documentId) {
         java.util.Deque<Command> undoStack = undoStacks.get(documentId);
-        return (undoStack == null || undoStack.isEmpty()) ? null : undoStack.peek().getDescription();
+        if (undoStack == null)
+            return null;
+
+        synchronized (undoStack) {
+            return undoStack.isEmpty() ? null : undoStack.peek().getDescription();
+        }
     }
 
     /**
@@ -84,20 +130,22 @@ public class CommandInvoker {
      */
     public String getRedoDescription(String documentId) {
         java.util.Deque<Command> redoStack = redoStacks.get(documentId);
-        return (redoStack == null || redoStack.isEmpty()) ? null : redoStack.peek().getDescription();
+        if (redoStack == null)
+            return null;
+
+        synchronized (redoStack) {
+            return redoStack.isEmpty() ? null : redoStack.peek().getDescription();
+        }
     }
 
     /**
      * Clears command history for a specific document.
+     * Removes the history entries entirely to prevent memory leaks.
      * 
      * @param documentId document ID
      */
     public void clear(String documentId) {
-        if (undoStacks.containsKey(documentId)) {
-            undoStacks.get(documentId).clear();
-        }
-        if (redoStacks.containsKey(documentId)) {
-            redoStacks.get(documentId).clear();
-        }
+        undoStacks.remove(documentId);
+        redoStacks.remove(documentId);
     }
 }

@@ -98,6 +98,22 @@ public class MementoCaretaker {
         versionRepository.deleteAll(versions);
     }
 
+    /**
+     * Deletes a specific memento (version) of a document.
+     * 
+     * @param documentId document ID
+     * @param version    version to delete
+     * @return true if deleted, false if not found
+     */
+    public boolean deleteMemento(String documentId, String version) {
+        Optional<DocumentVersion> versionEntity = versionRepository.findByDocumentIdAndVersion(documentId, version);
+        if (versionEntity.isPresent()) {
+            versionRepository.delete(versionEntity.get());
+            return true;
+        }
+        return false;
+    }
+
     private DocumentMemento convertToMemento(DocumentVersion entity) {
         try {
             List<Element> elements = objectMapper.readValue(

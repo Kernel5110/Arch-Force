@@ -4,33 +4,42 @@
 
 Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 17**. El sistema demuestra la aplicación práctica de **8 Patrones de Diseño GoF** organizados en 4 módulos funcionales.
 
-## 🏗️ Arquitectura - 4 Módulos Funcionales
+## Arquitectura - 4 Módulos Funcionales
 
 ### Módulo 1: Creación de Documentos
+
 **Patrones Implementados:**
+
 - ✅ **Factory Method**: Creación de diferentes tipos de elementos (párrafos, imágenes, tablas, listas)
 - ✅ **Builder**: Construcción paso a paso de documentos complejos
 
 **Endpoints:**
+
 - `POST /api/documents/create` - Crear un nuevo documento
 - `POST /api/documents/add-element` - Agregar elementos al documento
 - `GET /api/documents/{id}` - Obtener un documento
 
 ### Módulo 2: Estructura y Estilos
+
 **Patrones Implementados:**
+
 - ✅ **Composite**: Jerarquía de documentos (secciones, subsecciones, elementos)
 - ✅ **Decorator**: Aplicación dinámica de estilos (negrita, cursiva, color, tamaño)
 
 **Endpoints:**
+
 - `GET /api/documents/structure` - Obtener estructura jerárquica
 - `POST /api/styles/apply` - Aplicar estilos a elementos
 
 ### Módulo 3: Edición y Versionado
+
 **Patrones Implementados:**
+
 - ✅ **Command**: Operaciones de deshacer/rehacer
 - ✅ **Memento**: Guardar y restaurar versiones del documento
 
 **Endpoints:**
+
 - `POST /api/documents/undo` - Deshacer última operación
 - `POST /api/documents/redo` - Rehacer operación
 - `GET /api/versions/list` - Listar todas las versiones
@@ -38,17 +47,20 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 - `POST /api/versions/restore` - Restaurar una versión específica
 
 ### Módulo 4: Colaboración y Exportación
+
 **Patrones Implementados:**
+
 - ✅ **Observer**: Notificación de cambios a colaboradores
 - ✅ **Strategy**: Exportación a diferentes formatos (PDF, HTML, Markdown)
 
 **Endpoints:**
+
 - `POST /api/collaborators/add` - Agregar colaborador
 - `GET /api/collaborators/list` - Listar colaboradores
 - `POST /api/export/document` - Exportar documento
 - `GET /api/export/formats` - Obtener formatos disponibles
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **Java**: 17
 - **Spring Boot**: 3.2.0
@@ -87,15 +99,18 @@ src/main/java/com/collaborativeeditor/
 ## 🔧 Instalación y Ejecución
 
 ### Requisitos Previos
+
 - Java 17 o superior
 - Maven 3.6+
 
 ### Compilar el Proyecto
+
 ```bash
 mvn clean compile
 ```
 
 ### Ejecutar la Aplicación
+
 ```bash
 mvn spring-boot:run
 ```
@@ -103,6 +118,7 @@ mvn spring-boot:run
 La aplicación estará disponible en: `http://localhost:8080`
 
 ### Empaquetar como JAR
+
 ```bash
 mvn clean package
 java -jar target/collaborative-document-editor-1.0.0.jar
@@ -111,6 +127,7 @@ java -jar target/collaborative-document-editor-1.0.0.jar
 ## 📝 Ejemplos de Uso
 
 ### 1. Crear un Documento (Builder Pattern)
+
 ```bash
 curl -X POST http://localhost:8080/api/documents/create \
   -H "Content-Type: application/json" \
@@ -122,6 +139,7 @@ curl -X POST http://localhost:8080/api/documents/create \
 ```
 
 ### 2. Agregar Elemento (Factory Method Pattern)
+
 ```bash
 curl -X POST http://localhost:8080/api/documents/add-element \
   -H "Content-Type: application/json" \
@@ -135,6 +153,7 @@ curl -X POST http://localhost:8080/api/documents/add-element \
 ```
 
 ### 3. Aplicar Estilos (Decorator Pattern)
+
 ```bash
 curl -X POST http://localhost:8080/api/styles/apply \
   -H "Content-Type: application/json" \
@@ -146,11 +165,13 @@ curl -X POST http://localhost:8080/api/styles/apply \
 ```
 
 ### 4. Crear Versión (Memento Pattern)
+
 ```bash
 curl -X POST "http://localhost:8080/api/versions/create?documentId=abc-123&versionName=v1.0"
 ```
 
 ### 5. Agregar Colaborador (Observer Pattern)
+
 ```bash
 curl -X POST http://localhost:8080/api/collaborators/add \
   -H "Content-Type: application/json" \
@@ -162,6 +183,7 @@ curl -X POST http://localhost:8080/api/collaborators/add \
 ```
 
 ### 6. Exportar Documento (Strategy Pattern)
+
 ```bash
 curl -X POST http://localhost:8080/api/export/document \
   -H "Content-Type: application/json" \
@@ -181,16 +203,16 @@ curl -X POST http://localhost:8080/api/export/document \
 
 ## 📊 Patrones de Diseño Implementados
 
-| Patrón | Tipo | Módulo | Propósito |
-|--------|------|--------|-----------|
-| Factory Method | Creacional | 1 | Crear elementos de documento |
-| Builder | Creacional | 1 | Construir documentos complejos |
-| Composite | Estructural | 2 | Jerarquía de documentos |
-| Decorator | Estructural | 2 | Aplicar estilos dinámicos |
-| Command | Comportamiento | 3 | Deshacer/Rehacer operaciones |
-| Memento | Comportamiento | 3 | Versionado de documentos |
-| Observer | Comportamiento | 4 | Notificar colaboradores |
-| Strategy | Comportamiento | 4 | Exportar a múltiples formatos |
+| Patrón        | Tipo           | Módulo | Propósito                     |
+| -------------- | -------------- | ------- | ------------------------------ |
+| Factory Method | Creacional     | 1       | Crear elementos de documento   |
+| Builder        | Creacional     | 1       | Construir documentos complejos |
+| Composite      | Estructural    | 2       | Jerarquía de documentos       |
+| Decorator      | Estructural    | 2       | Aplicar estilos dinámicos     |
+| Command        | Comportamiento | 3       | Deshacer/Rehacer operaciones   |
+| Memento        | Comportamiento | 3       | Versionado de documentos       |
+| Observer       | Comportamiento | 4       | Notificar colaboradores        |
+| Strategy       | Comportamiento | 4       | Exportar a múltiples formatos |
 
 ## 📚 Documentación Adicional
 
@@ -202,6 +224,7 @@ curl -X POST http://localhost:8080/api/export/document \
 ## 🔍 Testing
 
 El proyecto está listo para pruebas con herramientas como:
+
 - **Postman** - Colecciones de pruebas REST
 - **curl** - Comandos de línea
 - **REST Client** - Extensiones de IDEs

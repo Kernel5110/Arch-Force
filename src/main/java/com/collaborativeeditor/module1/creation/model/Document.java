@@ -52,6 +52,10 @@ public class Document {
     @Version
     private Long version; // Optimistic locking
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
     /**
      * Adds an element to the document.
      * 

@@ -3,10 +3,12 @@ package com.collaborativeeditor.controller;
 import com.collaborativeeditor.dto.AddElementRequest;
 import com.collaborativeeditor.dto.ApiResponse;
 import com.collaborativeeditor.dto.CreateDocumentRequest;
+
 import com.collaborativeeditor.module1.creation.builder.DocumentBuilder;
 
 import com.collaborativeeditor.module1.creation.model.*;
 import com.collaborativeeditor.service.DocumentService;
+import com.collaborativeeditor.module4.collaboration.observer.DocumentSubject;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ public class CreationController {
 
         private final DocumentBuilder documentBuilder;
         private final DocumentService documentService;
+        private final DocumentSubject documentSubject;
 
         /**
          * Creates a new document using the Builder pattern.
@@ -73,16 +76,22 @@ public class CreationController {
                                         .body(ApiResponse.error("Document not found"));
                 }
 
-                Element element = request.getElement();
+                String type = request.getElementType();
+                Map<String, Object> data = request.getElementData();
 
-                if (element == null) {
+                if (type == null || data == null) {
                         return ResponseEntity
                                         .status(HttpStatus.BAD_REQUEST)
                                         .body(ApiResponse.error("Invalid element data"));
                 }
 
+                Element element = mapRawDataToElement(type, data);
+
                 document.addElement(element);
                 documentService.saveDocument(document);
+
+                // Notify observers for real-time updates
+                documentSubject.notifyObservers(request.getDocumentId(), "Element added: " + type);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success("Element added successfully", document));
@@ -120,6 +129,42 @@ public class CreationController {
                 return ResponseEntity.ok(
                                 ApiResponse.success("Documents retrieved successfully",
                                                 documentService.getAllDocuments()));
+        }
+
+        /**
+         * Deletes an element from a document.
+         * POST /api/documents/delete-element
+         *
+         * @param request delete request containing documentId and elementId
+         * @return updated document
+         */
+        @PostMapping("/delete-element")
+        public ResponseEntity<ApiResponse<Document>> deleteElement(@RequestBody Map<String, String> request) {
+                String documentId = request.get("documentId");
+                String elementId = request.get("elementId");
+
+                if (documentId == null || elementId == null) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                        .body(ApiResponse.error("Missing documentId or elementId"));
+                }
+
+                Document document = documentService.getDocument(documentId);
+                if (document == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(ApiResponse.error("Document not found"));
+                }
+
+                boolean removed = document.getElements().removeIf(e -> e.getId().equals(Long.parseLong(elementId)));
+
+                if (removed) {
+                        document.setLastModified(java.time.LocalDateTime.now());
+                        documentService.saveDocument(document);
+                        documentSubject.notifyObservers(documentId, "Element deleted");
+                        return ResponseEntity.ok(ApiResponse.success("Element deleted successfully", document));
+                } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(ApiResponse.error("Element not found"));
+                }
         }
 
         /**
@@ -181,6 +226,11 @@ public class CreationController {
                         }
                         if (data.containsKey("ordered"))
                                 list.setOrdered((Boolean) data.getOrDefault("ordered", false));
+                } else if (element instanceof CodeBlock code) {
+                        if (data.containsKey("content"))
+                                code.setContent((String) data.get("content"));
+                        if (data.containsKey("language"))
+                                code.setLanguage((String) data.get("language"));
                 }
         }
 
@@ -192,4 +242,126 @@ public class CreationController {
          * @return created element
          */
 
+        private Element mapRawDataToElement(String type, Map<String, Object> data) {
+                switch (type.toLowerCase()) {
+                        case "paragraph":
+                                Paragraph p = new Paragraph();
+                                if (data.containsKey("content")) {
+                                        p.setContent((String) data.get("content"));
+                                }
+                                return p;
+                        case "heading":
+                                Heading h = new Heading();
+                                if (data.containsKey("content")) {
+                                        h.setContent((String) data.get("content"));
+                                }
+                                if (data.containsKey("level")) {
+                                        Object levelObj = data.get("level");
+                                        h.setLevel(levelObj instanceof Integer ? (Integer) levelObj
+                                                        : Integer.parseInt(levelObj.toString()));
+                                } else {
+                                        h.setLevel(1);
+                                }
+                                return h;
+                        case "image":
+                                Image i = new Image();
+                                if (data.containsKey("url")) {
+                                        i.setUrl((String) data.get("url"));
+                                }
+                                if (data.containsKey("altText")) {
+                                        i.setAltText((String) data.get("altText"));
+                                }
+                                return i;
+                        case "list":
+                                ListElement l = new ListElement();
+                                if (data.containsKey("items")) {
+                                        @SuppressWarnings("unchecked")
+                                        List<String> items = (List<String>) data.get("items");
+                                        l.setItems(items);
+                                }
+                                if (data.containsKey("ordered")) {
+                                        l.setOrdered((Boolean) data.getOrDefault("ordered", false));
+                                }
+                                return l;
+                        case "code":
+                                CodeBlock c = new CodeBlock();
+                                if (data.containsKey("content"))
+                                        c.setContent((String) data.get("content"));
+                                if (data.containsKey("language"))
+                                        c.setLanguage((String) data.get("language"));
+                                return c;
+                        default:
+                                Paragraph fallback = new Paragraph();
+                                if (data.containsKey("content")) {
+                                        fallback.setContent((String) data.get("content"));
+                                }
+                                return fallback;
+                }
+        }
+
+        /**
+         * Deletes a document by ID.
+         * DELETE /api/documents/{id}
+         * 
+         * @param id document ID
+         * @return success message
+         */
+        @DeleteMapping("/{id}")
+        public ResponseEntity<ApiResponse<String>> deleteDocument(@PathVariable String id) {
+                boolean deleted = documentService.deleteDocument(id);
+
+                if (deleted) {
+                        return ResponseEntity.ok(
+                                        ApiResponse.success("Document deleted successfully", id));
+                } else {
+                        return ResponseEntity
+                                        .status(HttpStatus.NOT_FOUND)
+                                        .body(ApiResponse.error("Document not found"));
+                }
+        }
+
+        /**
+         * Gets documents in the recycle bin.
+         * GET /api/documents/recycle-bin
+         *
+         * @return list of deleted documents
+         */
+        @GetMapping("/recycle-bin")
+        public ResponseEntity<ApiResponse<List<Document>>> getRecycleBin() {
+                return ResponseEntity.ok(
+                                ApiResponse.success("Recycle bin retrieved successfully",
+                                                documentService.getRecycleBinDocuments()));
+        }
+
+        /**
+         * Restores a document from the recycle bin.
+         * POST /api/documents/restore/{id}
+         *
+         * @param id document ID
+         * @return success message
+         */
+        @PostMapping("/restore/{id}")
+        public ResponseEntity<ApiResponse<String>> restoreDocument(@PathVariable String id) {
+                boolean restored = documentService.restoreDocument(id);
+                if (restored) {
+                        return ResponseEntity.ok(ApiResponse.success("Document restored successfully", id));
+                }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Document not found"));
+        }
+
+        /**
+         * Permanently deletes a document.
+         * DELETE /api/documents/permanent/{id}
+         *
+         * @param id document ID
+         * @return success message
+         */
+        @DeleteMapping("/permanent/{id}")
+        public ResponseEntity<ApiResponse<String>> permanentDeleteDocument(@PathVariable String id) {
+                boolean deleted = documentService.permanentDeleteDocument(id);
+                if (deleted) {
+                        return ResponseEntity.ok(ApiResponse.success("Document permanently deleted", id));
+                }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Document not found"));
+        }
 }

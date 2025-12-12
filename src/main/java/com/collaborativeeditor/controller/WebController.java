@@ -28,4 +28,10 @@ public class WebController {
         // for details
         return "editor";
     }
+
+    @GetMapping("/recycle-bin")
+    public String recycleBin(Model model) {
+        model.addAttribute("documents", documentService.getRecycleBinDocuments());
+        return "recycle_bin"; // Thymeleaf template
+    }
 }

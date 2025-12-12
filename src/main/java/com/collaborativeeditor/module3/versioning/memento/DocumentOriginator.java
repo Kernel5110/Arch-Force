@@ -1,7 +1,6 @@
 package com.collaborativeeditor.module3.versioning.memento;
 
 import com.collaborativeeditor.module1.creation.model.Document;
-import java.util.ArrayList;
 
 /**
  * Originator in the Memento pattern.
@@ -60,7 +59,10 @@ public class DocumentOriginator {
         document.setId(memento.getId());
         document.setTitle(memento.getTitle());
         document.setAuthor(memento.getAuthor());
-        document.setElements(new ArrayList<>(memento.getElements()));
+        document.getElements().clear();
+        if (memento.getElements() != null) {
+            document.getElements().addAll(memento.getElements());
+        }
         document.setMetadata(memento.getMetadata());
     }
 }

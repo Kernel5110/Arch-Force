@@ -190,4 +190,29 @@ public class VersioningController {
                 return ResponseEntity.ok(
                                 ApiResponse.success("Version created successfully", versionName));
         }
+
+        /**
+         * Deletes a specific version of a document.
+         * POST /api/versions/delete
+         *
+         * @param documentId document ID
+         * @param version    version to delete
+         * @return success message
+         */
+        @PostMapping("/versions/delete")
+        public ResponseEntity<ApiResponse<String>> deleteVersion(
+                        @RequestParam String documentId,
+                        @RequestParam String version) {
+
+                boolean deleted = mementoCaretaker.deleteMemento(documentId, version);
+
+                if (deleted) {
+                        return ResponseEntity.ok(
+                                        ApiResponse.success("Version deleted successfully", version));
+                } else {
+                        return ResponseEntity
+                                        .status(HttpStatus.NOT_FOUND)
+                                        .body(ApiResponse.error("Version not found"));
+                }
+        }
 }

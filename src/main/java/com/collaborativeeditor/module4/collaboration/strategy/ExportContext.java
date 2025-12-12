@@ -55,7 +55,12 @@ public class ExportContext {
         if (currentStrategy == null) {
             throw new IllegalStateException("Export strategy not set");
         }
-        return currentStrategy.export(document);
+        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            currentStrategy.export(document, out);
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error exporting document", e);
+        }
     }
 
     /**

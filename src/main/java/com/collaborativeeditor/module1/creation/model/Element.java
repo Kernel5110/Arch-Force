@@ -18,7 +18,8 @@ import lombok.Data;
         @JsonSubTypes.Type(value = Image.class, name = "image"),
         @JsonSubTypes.Type(value = Table.class, name = "table"),
         @JsonSubTypes.Type(value = ListElement.class, name = "list"),
-        @JsonSubTypes.Type(value = Heading.class, name = "heading")
+        @JsonSubTypes.Type(value = Heading.class, name = "heading"),
+        @JsonSubTypes.Type(value = CodeBlock.class, name = "code")
 })
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)

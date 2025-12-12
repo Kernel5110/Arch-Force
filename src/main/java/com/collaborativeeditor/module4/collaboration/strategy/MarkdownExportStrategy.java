@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class MarkdownExportStrategy implements ExportStrategy {
 
     @Override
-    public byte[] export(Document document) {
+    public void export(Document document, java.io.OutputStream out) {
         StringBuilder markdown = new StringBuilder();
 
         // Title
@@ -28,7 +28,11 @@ public class MarkdownExportStrategy implements ExportStrategy {
             markdown.append(renderElement(element)).append("\n\n");
         }
 
-        return markdown.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            out.write(markdown.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error writing Markdown to output stream", e);
+        }
     }
 
     private String renderElement(Element element) {

@@ -3,14 +3,14 @@
 
 <body>
     <header th:fragment="header">
-        <nav
-            style="background: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
-            <div style="font-size: 1.2em; font-weight: bold; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-feather-alt"></i>
-                <a href="/" style="color: white; text-decoration: none;">Arch_Force Editor</a>
+        <nav>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img src="/images/arch-logo.svg" alt="Arch Linux Logo" style="height: 40px;">
+                <a href="/">Arch_Force Editor</a>
             </div>
-            <div>
-                <span style="color: #ecf0f1; font-size: 0.9em;">Team: Arch_Force</span>
+            <div style="display: flex; gap: 1rem;">
+                <a href="/" class="btn btn-secondary"><i class="fas fa-home"></i> Home</a>
+                <a href="/recycle-bin" class="btn btn-warning"><i class="fas fa-trash-alt"></i> Recycle Bin</a>
             </div>
         </nav>
     </header>

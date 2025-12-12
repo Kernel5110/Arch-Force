@@ -16,7 +16,13 @@ public interface ExportStrategy {
      * @param document document to export
      * @return exported content as bytes
      */
-    byte[] export(Document document);
+    /**
+     * Exports a document in a specific format to the provided output stream.
+     * 
+     * @param document document to export
+     * @param out      output stream to write to
+     */
+    void export(Document document, java.io.OutputStream out);
 
     /**
      * Gets the format name of this export strategy.
