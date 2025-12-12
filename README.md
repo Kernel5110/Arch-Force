@@ -4,12 +4,12 @@
 
 Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 17**. El sistema demuestra la aplicación práctica de **8 Patrones de Diseño GoF** organizados en 4 módulos funcionales.
 
-## 🏗️ Arquitectura - 4 Módulos Funcionales
+## Arquitectura - 4 Módulos Funcionales
 
 ### Módulo 1: Creación de Documentos
 **Patrones Implementados:**
-- ✅ **Factory Method**: Creación de diferentes tipos de elementos (párrafos, imágenes, tablas, listas)
-- ✅ **Builder**: Construcción paso a paso de documentos complejos
+- **Factory Method**: Creación de diferentes tipos de elementos (párrafos, imágenes, tablas, listas)
+- **Builder**: Construcción paso a paso de documentos complejos
 
 **Endpoints:**
 - `POST /api/documents/create` - Crear un nuevo documento
@@ -18,8 +18,8 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 
 ### Módulo 2: Estructura y Estilos
 **Patrones Implementados:**
-- ✅ **Composite**: Jerarquía de documentos (secciones, subsecciones, elementos)
-- ✅ **Decorator**: Aplicación dinámica de estilos (negrita, cursiva, color, tamaño)
+- **Composite**: Jerarquía de documentos (secciones, subsecciones, elementos)
+- **Decorator**: Aplicación dinámica de estilos (negrita, cursiva, color, tamaño)
 
 **Endpoints:**
 - `GET /api/documents/structure` - Obtener estructura jerárquica
@@ -27,8 +27,8 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 
 ### Módulo 3: Edición y Versionado
 **Patrones Implementados:**
-- ✅ **Command**: Operaciones de deshacer/rehacer
-- ✅ **Memento**: Guardar y restaurar versiones del documento
+- **Command**: Operaciones de deshacer/rehacer
+- **Memento**: Guardar y restaurar versiones del documento
 
 **Endpoints:**
 - `POST /api/documents/undo` - Deshacer última operación
@@ -39,8 +39,8 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 
 ### Módulo 4: Colaboración y Exportación
 **Patrones Implementados:**
-- ✅ **Observer**: Notificación de cambios a colaboradores
-- ✅ **Strategy**: Exportación a diferentes formatos (PDF, HTML, Markdown)
+- **Observer**: Notificación de cambios a colaboradores
+- **Strategy**: Exportación a diferentes formatos (PDF, HTML, Markdown)
 
 **Endpoints:**
 - `POST /api/collaborators/add` - Agregar colaborador
@@ -48,7 +48,7 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 - `POST /api/export/document` - Exportar documento
 - `GET /api/export/formats` - Obtener formatos disponibles
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **Java**: 17
 - **Spring Boot**: 3.2.0
@@ -56,7 +56,7 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 - **Lombok**: Reducción de código boilerplate
 - **Jackson**: Serialización JSON
 
-## 📦 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 src/main/java/com/collaborativeeditor/
@@ -84,7 +84,7 @@ src/main/java/com/collaborativeeditor/
     └── strategy/
 ```
 
-## 🔧 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### Requisitos Previos
 - Java 17 o superior
@@ -108,7 +108,7 @@ mvn clean package
 java -jar target/collaborative-document-editor-1.0.0.jar
 ```
 
-## 📝 Ejemplos de Uso
+## Ejemplos de Uso
 
 ### 1. Crear un Documento (Builder Pattern)
 ```bash
@@ -171,7 +171,7 @@ curl -X POST http://localhost:8080/api/export/document \
   }'
 ```
 
-## 🎯 Principios SOLID Aplicados
+## Principios SOLID Aplicados
 
 ✅ **Single Responsibility**: Cada clase tiene una única responsabilidad bien definida
 ✅ **Open/Closed**: Extensible sin modificar código existente (decoradores, estrategias)
@@ -179,7 +179,7 @@ curl -X POST http://localhost:8080/api/export/document \
 ✅ **Interface Segregation**: Interfaces específicas por función
 ✅ **Dependency Inversion**: Dependencias mediante abstracciones
 
-## 📊 Patrones de Diseño Implementados
+## Patrones de Diseño Implementados
 
 | Patrón | Tipo | Módulo | Propósito |
 |--------|------|--------|-----------|
@@ -192,24 +192,24 @@ curl -X POST http://localhost:8080/api/export/document \
 | Observer | Comportamiento | 4 | Notificar colaboradores |
 | Strategy | Comportamiento | 4 | Exportar a múltiples formatos |
 
-## 📚 Documentación Adicional
+## Documentación Adicional
 
 - Todas las clases principales incluyen **JavaDoc** completo
 - Los DTOs implementan validación con **Bean Validation**
 - Manejo global de excepciones con **@RestControllerAdvice**
 - Respuestas JSON consistentes mediante `ApiResponse<T>`
 
-## 🔍 Testing
+## Testing
 
 El proyecto está listo para pruebas con herramientas como:
 - **Postman** - Colecciones de pruebas REST
 - **curl** - Comandos de línea
 - **REST Client** - Extensiones de IDEs
 
-## 👥 Autor
+## Autor
 
 Proyecto creado como demostración de Patrones de Diseño GoF en Spring Boot.
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto es de código abierto para fines educativos.
