@@ -9,7 +9,6 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 ### Módulo 1: Creación de Documentos
 
 **Patrones Implementados:**
-
 - ✅ **Factory Method**: Creación de diferentes tipos de elementos (párrafos, imágenes, tablas, listas)
 - ✅ **Builder**: Construcción paso a paso de documentos complejos
 
@@ -22,7 +21,6 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 ### Módulo 2: Estructura y Estilos
 
 **Patrones Implementados:**
-
 - ✅ **Composite**: Jerarquía de documentos (secciones, subsecciones, elementos)
 - ✅ **Decorator**: Aplicación dinámica de estilos (negrita, cursiva, color, tamaño)
 
@@ -34,7 +32,6 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 ### Módulo 3: Edición y Versionado
 
 **Patrones Implementados:**
-
 - ✅ **Command**: Operaciones de deshacer/rehacer
 - ✅ **Memento**: Guardar y restaurar versiones del documento
 
@@ -49,7 +46,6 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 ### Módulo 4: Colaboración y Exportación
 
 **Patrones Implementados:**
-
 - ✅ **Observer**: Notificación de cambios a colaboradores
 - ✅ **Strategy**: Exportación a diferentes formatos (PDF, HTML, Markdown)
 
@@ -68,7 +64,7 @@ Editor de Documentos Colaborativo implementado con **Spring Boot 3.2** y **Java 
 - **Lombok**: Reducción de código boilerplate
 - **Jackson**: Serialización JSON
 
-## 📦 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 src/main/java/com/collaborativeeditor/
@@ -96,7 +92,7 @@ src/main/java/com/collaborativeeditor/
     └── strategy/
 ```
 
-## 🔧 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### Requisitos Previos
 
@@ -124,7 +120,7 @@ mvn clean package
 java -jar target/collaborative-document-editor-1.0.0.jar
 ```
 
-## 📝 Ejemplos de Uso
+## Ejemplos de Uso
 
 ### 1. Crear un Documento (Builder Pattern)
 
@@ -193,7 +189,7 @@ curl -X POST http://localhost:8080/api/export/document \
   }'
 ```
 
-## 🎯 Principios SOLID Aplicados
+## Principios SOLID Aplicados
 
 ✅ **Single Responsibility**: Cada clase tiene una única responsabilidad bien definida
 ✅ **Open/Closed**: Extensible sin modificar código existente (decoradores, estrategias)
@@ -201,7 +197,7 @@ curl -X POST http://localhost:8080/api/export/document \
 ✅ **Interface Segregation**: Interfaces específicas por función
 ✅ **Dependency Inversion**: Dependencias mediante abstracciones
 
-## 📊 Patrones de Diseño Implementados
+## Patrones de Diseño Implementados
 
 | Patrón        | Tipo           | Módulo | Propósito                     |
 | -------------- | -------------- | ------- | ------------------------------ |
@@ -214,14 +210,14 @@ curl -X POST http://localhost:8080/api/export/document \
 | Observer       | Comportamiento | 4       | Notificar colaboradores        |
 | Strategy       | Comportamiento | 4       | Exportar a múltiples formatos |
 
-## 📚 Documentación Adicional
+## Documentación Adicional
 
 - Todas las clases principales incluyen **JavaDoc** completo
 - Los DTOs implementan validación con **Bean Validation**
 - Manejo global de excepciones con **@RestControllerAdvice**
 - Respuestas JSON consistentes mediante `ApiResponse<T>`
 
-## 🔍 Testing
+## Testing
 
 El proyecto está listo para pruebas con herramientas como:
 
@@ -229,10 +225,10 @@ El proyecto está listo para pruebas con herramientas como:
 - **curl** - Comandos de línea
 - **REST Client** - Extensiones de IDEs
 
-## 👥 Autor
+## Autor
 
 Proyecto creado como demostración de Patrones de Diseño GoF en Spring Boot.
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto es de código abierto para fines educativos.
